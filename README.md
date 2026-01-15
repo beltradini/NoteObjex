@@ -47,4 +47,3 @@ The project is designed to deeply understand and practice:
 ## Goal
 
 To be fully capable of reading, maintaining, and extending real-world Objective-C codebases used in Apple platforms.
-

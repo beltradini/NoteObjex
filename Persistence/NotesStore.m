@@ -30,6 +30,7 @@
     self = [super init];
     if (self) {
         _privateNotes = [NSMutableArray array];
+        [self load];
     }
     return self;
 }

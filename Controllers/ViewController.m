@@ -5,14 +5,23 @@
 //  Created by Alejandro Beltrán on 1/2/26.
 //
 
-#import "NotesListViewController.h"
+#import "ViewController.h"
 #import "NotesStore.h"
 #import "Note.h"
+
+@interface ViewController () <UITableViewDataSource, UITableViewDelegate>
+@end
 
 @implementation ViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    
+    self.tableView = [[UITableView alloc] initWithFrame:self.view.bounds style:UITableViewStylePlain];
+    self.tableView.dataSource = self;
+    self.tableView.delegate = self;
+    self.tableView.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+    [self.view addSubview:self.tableView];
 
     self.title = @"Notes";
     self.navigationItem.rightBarButtonItem =
