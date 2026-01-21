@@ -6,6 +6,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <CloudKit/CloudKit.h>
 
 @interface Note : NSObject <NSCopying>
 
@@ -14,6 +15,7 @@
 @property (nonatomic, copy) NSString *content;
 @property (nonatomic, strong) NSDate *createdAt;
 @property (nonatomic, strong) NSDate *updatedAt;
+@property (nonatomic, strong, nullable) CKRecordID *cloudRecordID;
 
 - (instancetype)initWithTitle:(NSString *)title
                       content:(NSString *)content;

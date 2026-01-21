@@ -6,6 +6,7 @@
 //
 
 #import "Note.h"
+#import <CloudKit/CloudKit.h>
 
 @implementation Note
 
@@ -18,6 +19,7 @@
         _content = [content copy];
         _createdAt = [NSDate date];
         _updatedAt = _createdAt;
+        _cloudRecordID = nil;
     }
     return self;
 }
@@ -49,6 +51,7 @@
     copy.content = self.content;
     copy.createdAt = self.createdAt;
     copy.updatedAt = self.updatedAt;
+    copy.cloudRecordID = self.cloudRecordID;
     return copy;
 }
 
