@@ -98,8 +98,21 @@
 #pragma mark - Helper Methods
 
 - (CKRecord *)recordFromNote:(Note *)note {
-    CKRecordID *recordID = note.cloudRecordID ?: [[CKRecordID alloc] initWithRecord:[[NSUUID UUID] UUIDString]];
+    CKRecordID *recordID = note.cloudRecordID ?: [[CKRecordID alloc] initWithRecordName:[[NSUUID UUID] UUIDString]];
+    CKRecord *record = [[CKRecord alloc] initWithRecordType:kNoteRecordType recordID:recordID];
+    record[kNoteTitleKey] = note.title ?: @"";
+    record[kNoteContentKey] = note.content ?: @"";
+    record[kNoteCreatedAtKey] = note.createdAt ?: [NSDate date];
+    record[kNoteUpdatedAtKey] = note.updatedAt ?: [NSDate date];
+    return record;
+}
 
+- (Note *)noteFromRecord:(CKRecord *)record {
+    Note *note = [[Note alloc] initWithTitle:record[kNoteTitleKey] content:record[kNoteContentKey]];
+    note.createdAt = record[kNoteCreatedAtKey];
+    note.updatedAt = record[kNoteUpdatedAtKey];
+    note.cloudRecordID = record.recordID;
+    return note;
 }
 
 @end
