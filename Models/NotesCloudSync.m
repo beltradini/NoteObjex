@@ -6,11 +6,9 @@
 //
 
 #import "NotesCloudSync.h"
-#include <MacTypes.h>
-#include <objc/objc.h>
-#include <Foundation/Foundation.h>
-#include <dispatch/dispatch.h>
-#include <CloudKit/CloudKit.h>
+#import <Foundation/Foundation.h>
+#import <dispatch/dispatch.h>
+#import <CloudKit/CloudKit.h>
 #import "Note.h"
 
 #define kNoteRecordType @"Note"
@@ -28,7 +26,7 @@
 + (instancetype)sharedSync {
     static NotesCloudSync *shared;
     static dispatch_once_t onceToken;
-    dispatch_once_t(&onceToken, ^{
+    dispatch_once(&onceToken, ^{
         shared = [[NotesCloudSync alloc] init];
     });
     return shared;
@@ -44,12 +42,12 @@
 
 #pragma mark - Public Methods
 
-+ (void)uploadAllNotes:(NSArray<Note *> *)notes completion:(void (^)(NSError *error))completion {
+- (void)uploadAllNotes:(NSArray<Note *> *)notes completion:(void (^)(NSError *error))completion {
     NSMutableArray<CKRecord *> *records = [NSMutableArray array];
     for (Note *note in notes) {
         CKRecord *record = [self recordFromNote:note];
         [records addObject:record];
-    }   
+    }
     CKModifyRecordsOperation *op = [[CKModifyRecordsOperation alloc] initWithRecordsToSave:records recordIDsToDelete:nil];
     op.savePolicy = CKRecordSaveAllKeys;
     op.modifyRecordsCompletionBlock = ^(NSArray *savedRecords, NSArray *deletedRecordIDs, NSError *opError) {
@@ -86,7 +84,7 @@
         if (completion) completion([NSError errorWithDomain:@"CloudKit" code:0 userInfo:@{NSLocalizedDescriptionKey:@"No CKRecordID for note"}]);
         return;
     }
-    [self.privateDB deleteRecordWithID:note.cloudRecordID completionHandler: ^(CKRecordID *recordID, NSError *error) {
+    [self.privateDB deleteRecordWithID:note.cloudRecordID completionHandler:^(CKRecordID *recordID, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completion) {
                 completion(error);
