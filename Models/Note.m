@@ -6,6 +6,7 @@
 //
 
 #import "Note.h"
+#include <Foundation/Foundation.h>
 #import <CloudKit/CloudKit.h>
 
 @implementation Note
@@ -19,7 +20,9 @@
         _content = [content copy];
         _createdAt = [NSDate date];
         _updatedAt = _createdAt;
-        _cloudRecordID = nil;
+        _cloudRecord = nil;
+        _cloudRecordName = nil;
+        _cloudRecordChangeTag = nil;
     }
     return self;
 }
@@ -29,8 +32,10 @@
         @"id": self.identifier,
         @"title": self.title ?: @"",
         @"content": self.content ?: @"",
-        @"createdAt": self.createdAt,
-        @"updatedAt": self.updatedAt
+        @"createdAt": self.createdAt ?: [NSNull null],
+        @"updatedAt": self.updatedAt ?: [NSNull null],
+        @"cloudRecordName": self.cloudRecordName ? self.cloudRecordName.recordName : @"",
+        @"cloudRecordChangeTag": self.cloudRecordChangeTag ?: @""
     };
 }
 
@@ -41,6 +46,10 @@
     note.content = dict[@"content"];
     note.createdAt = dict[@"createdAt"];
     note.updatedAt = dict[@"updatedAt"];
+    NSString *rName = dict[@"cloudRecordName"];
+    note.cloudRecordName = (rName && [rName length] > 0) ? [[CKRecordID alloc] initWithRecordName:rName] : nil;
+    NSString *rTag = dict[@"cloudRecordChangeTag"];
+    note.cloudRecordChangeTag = (rTag && [rTag length] > 0) ? rTag : nil;
     return note;
 }
 
@@ -51,7 +60,9 @@
     copy.content = self.content;
     copy.createdAt = self.createdAt;
     copy.updatedAt = self.updatedAt;
-    copy.cloudRecordID = self.cloudRecordID;
+    copy.cloudRecord = self.cloudRecord;
+    copy.cloudRecordName = self.cloudRecordName;
+    copy.cloudRecordChangeTag = self.cloudRecordChangeTag;
     return copy;
 }
 

@@ -43,6 +43,10 @@
 #pragma mark - Public Methods
 
 - (void)uploadAllNotes:(NSArray<Note *> *)notes completion:(void (^)(NSError *error))completion {
+    [self uploadAllNotes:notes attempt:1 completion:completion];
+}
+
+- (void)uploadAllNotes:(NSArray<Note *> *)notes attempt:(NSInteger)attempt completion:(void (^)(NSError *error))completion {
     NSMutableArray<CKRecord *> *records = [NSMutableArray array];
     for (Note *note in notes) {
         CKRecord *record = [self recordFromNote:note];
@@ -51,11 +55,23 @@
     CKModifyRecordsOperation *op = [[CKModifyRecordsOperation alloc] initWithRecordsToSave:records recordIDsToDelete:nil];
     op.savePolicy = CKRecordSaveAllKeys;
     op.modifyRecordsCompletionBlock = ^(NSArray *savedRecords, NSArray *deletedRecordIDs, NSError *opError) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (completion) {
-                completion(opError);
-            }
-        });
+        BOOL shouldRetry = NO;
+        if (opError) {
+            NSInteger code = opError.code;
+            shouldRetry = (code == CKErrorNetworkFailure || code == CKErrorServiceUnavailable || code == CKErrorRequestRateLimited);
+        }
+        if (shouldRetry && attempt < 3) {
+            double delay = pow(2, attempt); // exponential backoff: 2, 4, 8 seconds
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [self uploadAllNotes:notes attempt:attempt+1 completion:completion];
+            });
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                if (completion) {
+                    completion(opError);
+                }
+            });
+        }
     };
     [self.privateDB addOperation:op];
 }
@@ -80,11 +96,11 @@
 }
 
 - (void)deleteNoteFromCloud:(Note *)note completion:(void (^)(NSError *))completion {
-    if (!note.cloudRecordID) {
+    if (!note.cloudRecord) {
         if (completion) completion([NSError errorWithDomain:@"CloudKit" code:0 userInfo:@{NSLocalizedDescriptionKey:@"No CKRecordID for note"}]);
         return;
     }
-    [self.privateDB deleteRecordWithID:note.cloudRecordID completionHandler:^(CKRecordID *recordID, NSError *error) {
+    [self.privateDB deleteRecordWithID:note.cloudRecord completionHandler:^(CKRecordID *recordID, NSError *error) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (completion) {
                 completion(error);
@@ -96,7 +112,7 @@
 #pragma mark - Helper Methods
 
 - (CKRecord *)recordFromNote:(Note *)note {
-    CKRecordID *recordID = note.cloudRecordID ?: [[CKRecordID alloc] initWithRecordName:[[NSUUID UUID] UUIDString]];
+    CKRecordID *recordID = note.cloudRecord ?: [[CKRecordID alloc] initWithRecordName:[[NSUUID UUID] UUIDString]];
     CKRecord *record = [[CKRecord alloc] initWithRecordType:kNoteRecordType recordID:recordID];
     record[kNoteTitleKey] = note.title ?: @"";
     record[kNoteContentKey] = note.content ?: @"";
@@ -109,7 +125,7 @@
     Note *note = [[Note alloc] initWithTitle:record[kNoteTitleKey] content:record[kNoteContentKey]];
     note.createdAt = record[kNoteCreatedAtKey];
     note.updatedAt = record[kNoteUpdatedAtKey];
-    note.cloudRecordID = record.recordID;
+    note.cloudRecord = record.recordID;
     return note;
 }
 

@@ -15,7 +15,13 @@
 @property (nonatomic, copy) NSString * _Nullable content;
 @property (nonatomic, strong) NSDate * _Nullable createdAt;
 @property (nonatomic, strong) NSDate * _Nullable updatedAt;
-@property (nonatomic, strong, nullable) CKRecordID *cloudRecordID;
+
+// CloudKit properties
+@property (nonatomic, copy, nullable) CKRecordID *cloudRecordName;
+@property (nonatomic, copy, nullable) NSString *cloudRecordChangeTag;
+
+// Store the entire CKRecord for synchronization purposes
+@property (nonatomic, strong, nullable) CKRecord *cloudRecord;
 
 - (instancetype _Nullable )initWithTitle:(NSString *_Nullable)title
                                  content:(NSString *_Nullable)content;
